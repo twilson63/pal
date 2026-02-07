@@ -1,0 +1,18 @@
+---
+name: assistant
+description: A helpful AI assistant
+model: anthropic/claude-sonnet-4.5
+provider: anthropic
+tools:
+  - bash
+  - readFile
+  - writeFile
+  - grep
+  - webSearch
+systemPrompt: |
+  You are a helpful AI assistant. You can help with coding tasks, 
+  file operations, and web searches. Always be concise and helpful.
+---
+
+## Context
+Add any project-specific context here.

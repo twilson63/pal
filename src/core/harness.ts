@@ -1,0 +1,244 @@
+import { ToolLoopAgent, type Tool, type LanguageModel } from "ai";
+import { createInterface } from "readline";
+import chalk from "chalk";
+import { AgentConfig } from "./types.js";
+
+function createSpinner(text: string) {
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  let i = 0;
+  const interval = setInterval(() => {
+    process.stdout.write(`\r${chalk.cyan(frames[i])} ${text}`);
+    i = (i + 1) % frames.length;
+  }, 80);
+  return {
+    stop: () => {
+      clearInterval(interval);
+      process.stdout.write('\r' + ' '.repeat(text.length + 2) + '\r');
+    }
+  };
+}
+
+export interface AgentInstance {
+  agent: ToolLoopAgent;
+  model: string;
+  provider: string;
+}
+
+export interface ConversationState {
+  isRunning: boolean;
+}
+
+/**
+ * Create a ToolLoopAgent instance from configuration
+ */
+export async function createAgent(
+  config: AgentConfig,
+  tools: Record<string, Tool>,
+  model?: LanguageModel
+): Promise<AgentInstance> {
+  const modelId = `${config.provider}/${config.model}`;
+
+  const instructions = config.systemPrompt || "You are a helpful AI assistant.";
+
+  const agent = new ToolLoopAgent({
+    model: model ?? modelId,
+    instructions,
+    tools,
+  });
+
+  return {
+    agent,
+    model: config.model,
+    provider: config.provider,
+  };
+}
+
+/**
+ * Run the main conversation loop
+ */
+export async function runConversation(
+  agentInstance: AgentInstance
+): Promise<void> {
+  const state: ConversationState = {
+    isRunning: true,
+  };
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const promptUser = (): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const onClose = () => {
+        resolve(null);
+      };
+
+      rl.once("close", onClose);
+      try {
+        rl.question(chalk.cyan("You: "), (input) => {
+          rl.removeListener("close", onClose);
+          resolve(input);
+        });
+      } catch {
+        rl.removeListener("close", onClose);
+        resolve(null);
+      }
+    });
+  };
+
+  console.log(chalk.green("Agent: ") + "Hello! I'm ready to help. Type /help for available commands.");
+  console.log(chalk.gray("Using model: " + agentInstance.model));
+  console.log();
+
+  try {
+    while (state.isRunning) {
+      const userInput = await promptUser();
+      if (userInput === null) {
+        state.isRunning = false;
+        break;
+      }
+      const trimmedInput = userInput.trim();
+
+      if (!trimmedInput) {
+        continue;
+      }
+
+      if (trimmedInput.startsWith("/")) {
+        const handled = await handleSlashCommand(trimmedInput, state, agentInstance);
+        if (!handled) {
+          state.isRunning = false;
+          break;
+        }
+        continue;
+      }
+
+      try {
+        const spinner = createSpinner('Thinking...');
+        let hasOutput = false;
+        let isExecutingTool = false;
+        let hasToolError = false;
+        
+        const stream = await agentInstance.agent.stream({
+          prompt: trimmedInput,
+        });
+
+        for await (const part of stream.fullStream) {
+          switch (part.type) {
+            case 'text-delta':
+              if (!hasOutput) {
+                spinner.stop();
+                process.stdout.write(chalk.green('Agent: '));
+                hasOutput = true;
+              }
+              process.stdout.write(part.text);
+              break;
+            case 'tool-call':
+              if (!isExecutingTool) {
+                isExecutingTool = true;
+                spinner.stop();
+              }
+              process.stdout.write(chalk.gray(`\n[Using tool: ${(part as any).toolName}]\n`));
+              break;
+            case 'tool-result':
+              isExecutingTool = false;
+              if (!hasOutput) {
+                spinner.stop();
+                process.stdout.write(chalk.green('Agent: '));
+                hasOutput = true;
+              }
+              break;
+            case 'error':
+              spinner.stop();
+              hasToolError = true;
+              console.error(chalk.red('\n[Error] ') + String((part as any).error));
+              break;
+          }
+        }
+
+        if (!hasOutput && !hasToolError) {
+          spinner.stop();
+          console.log(chalk.gray('(No response generated - this model may not support tools)'));
+        } else if (hasOutput) {
+          console.log();
+        }
+      } catch (error) {
+        console.error(chalk.red('\nError: ') + (error instanceof Error ? error.message : String(error)));
+      }
+
+      console.log();
+    }
+  } finally {
+    rl.close();
+  }
+}
+
+/**
+ * Handle slash commands
+ * Returns true if conversation should continue, false to exit
+ */
+async function handleSlashCommand(
+  input: string,
+  state: ConversationState,
+  agentInstance: AgentInstance
+): Promise<boolean> {
+  const [command] = input.slice(1).split(" ");
+
+  switch (command.toLowerCase()) {
+    case "exit":
+    case "quit":
+      console.log(chalk.yellow("Goodbye!"));
+      return false;
+
+    case "clear":
+      console.log(chalk.yellow("Conversation history cleared."));
+      return true;
+
+    case "help":
+      console.log(chalk.yellow("\nAvailable commands:"));
+      console.log("  /exit, /quit  - Exit the conversation");
+      console.log("  /clear        - Clear conversation history");
+      console.log("  /help         - Show this help message");
+      console.log("  /model        - Show current model information");
+      console.log();
+      return true;
+
+    case "model":
+      console.log(chalk.yellow("\nCurrent model:"));
+      console.log(`  Provider: ${agentInstance.provider}`);
+      console.log(`  Model: ${agentInstance.model}`);
+      console.log();
+      return true;
+
+    default:
+      console.log(chalk.red(`Unknown command: /${command}`));
+      console.log(chalk.gray("Type /help for available commands."));
+      return true;
+  }
+}
+
+export async function runTextMode(
+  agentInstance: AgentInstance,
+  prompt: string
+): Promise<void> {
+  try {
+    const stream = await agentInstance.agent.stream({
+      prompt: prompt.trim(),
+    });
+
+    for await (const part of stream.fullStream) {
+      switch (part.type) {
+        case 'text-delta':
+          process.stdout.write(part.text);
+          break;
+        case 'error':
+          console.error(chalk.red('\n[Error] ') + String((part as any).error));
+          break;
+      }
+    }
+    console.log();
+  } catch (error) {
+    console.error(chalk.red('Error: ') + (error instanceof Error ? error.message : String(error)));
+    process.exit(1);
+  }
+}

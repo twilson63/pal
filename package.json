@@ -1,0 +1,54 @@
+{
+  "name": "pal",
+  "version": "0.1.0",
+  "description": "Agent harness CLI using Vercel AI SDK",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "pal": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli/index.js",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "cli",
+    "vercel-ai-sdk",
+    "coding-assistant"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ai-sdk/anthropic": "",
+    "ai": "^6.0.0",
+    "ai-sdk-ollama": "^3.5.0",
+    "bash-tool": "^0.1.0",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.0",
+    "just-bash": "^2.9.6",
+    "yaml": "^2.5.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  },
+  "peerDependencies": {
+    "@ai-sdk/anthropic": "",
+    "@ai-sdk/openai": "^3.0.26"
+  },
+  "peerDependenciesMeta": {
+    "@ai-sdk/anthropic": {
+      "optional": true
+    },
+    "@ai-sdk/openai": {
+      "optional": true
+    }
+  }
+}

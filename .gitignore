@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+package-lock.json
+bun.lock
+
+# Build output
+dist/
+
+# Environment variables
+.env
+.env.*
+
+# Configuration files
+config/
+*.config.js
+*.config.ts
+
+# Agent configuration (user-specific)
+agent.md
+
+# Temporary files
+test-debug.js
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
