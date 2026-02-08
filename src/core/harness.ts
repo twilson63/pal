@@ -1,7 +1,12 @@
 import { ToolLoopAgent, type Tool, type LanguageModel } from "ai";
 import { createInterface } from "readline";
 import chalk from "chalk";
+import { marked } from "marked";
+import { markedTerminal } from "marked-terminal";
 import { AgentConfig } from "./types.js";
+
+// Configure marked to use terminal renderer
+marked.use(markedTerminal() as any);
 
 function createSpinner(text: string) {
   const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -120,6 +125,7 @@ export async function runConversation(
         let hasOutput = false;
         let isExecutingTool = false;
         let hasToolError = false;
+        let responseBuffer = '';
         
         const stream = await agentInstance.agent.stream({
           prompt: trimmedInput,
@@ -128,23 +134,13 @@ export async function runConversation(
         for await (const part of stream.fullStream) {
           switch (part.type) {
             case 'text-delta':
-              if (!hasOutput) {
-                spinner.stop();
-                process.stdout.write(chalk.hex('#FFA500')(agentInstance.name + ': '));
-                hasOutput = true;
-              }
-              process.stdout.write(part.text);
+              responseBuffer += part.text;
               break;
             case 'tool-call':
               // Tool call output suppressed
               break;
             case 'tool-result':
               isExecutingTool = false;
-              if (!hasOutput) {
-                spinner.stop();
-                process.stdout.write(chalk.hex('#FFA500')(agentInstance.name + ': '));
-                hasOutput = true;
-              }
               break;
             case 'error':
               spinner.stop();
@@ -154,11 +150,18 @@ export async function runConversation(
           }
         }
 
+        if (!hasOutput && !hasToolError && responseBuffer.trim()) {
+          hasOutput = true;
+        }
+
         if (!hasOutput && !hasToolError) {
           spinner.stop();
           console.log(chalk.gray('(No response generated - this model may not support tools)'));
         } else if (hasOutput) {
-          console.log();
+          spinner.stop();
+          process.stdout.write(chalk.hex('#FFA500')(agentInstance.name + ': '));
+          const rendered = marked.parse(responseBuffer) as string;
+          console.log(rendered);
         }
       } catch (error) {
         console.error(chalk.red('\nError: ') + (error instanceof Error ? error.message : String(error)));
