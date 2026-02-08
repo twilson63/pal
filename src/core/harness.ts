@@ -3,11 +3,17 @@ import { createInterface } from "readline";
 import chalk from "chalk";
 import { marked } from "marked";
 import { markedTerminal } from "marked-terminal";
-import { AgentConfig, Message } from "./types.js";
+import { AgentConfig } from "./types.js";
 
 // Configure marked to use terminal renderer
 marked.use(markedTerminal() as any);
 
+/**
+ * Creates a terminal spinner for in-progress operations.
+ *
+ * @param text Status text rendered next to spinner frames.
+ * @returns A handle used to stop and clear the spinner output.
+ */
 function createSpinner(text: string) {
   const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
   let i = 0;
@@ -23,6 +29,9 @@ function createSpinner(text: string) {
   };
 }
 
+/**
+ * Runtime container for a configured agent and model metadata.
+ */
 export interface AgentInstance {
   agent: ToolLoopAgent;
   model: string;
@@ -30,13 +39,21 @@ export interface AgentInstance {
   name: string;
 }
 
+/**
+ * Mutable state tracked for an interactive chat session.
+ */
 export interface ConversationState {
   isRunning: boolean;
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
 /**
- * Create a ToolLoopAgent instance from configuration
+ * Creates a `ToolLoopAgent` from validated configuration and tools.
+ *
+ * @param config Agent configuration loaded from `agent.md`.
+ * @param tools Tool map exposed to the model.
+ * @param model Optional pre-built language model instance.
+ * @returns An initialized agent instance for conversation or text mode.
  */
 export async function createAgent(
   config: AgentConfig,
@@ -62,7 +79,10 @@ export async function createAgent(
 }
 
 /**
- * Run the main conversation loop
+ * Runs the interactive REPL-style conversation loop.
+ *
+ * @param agentInstance Initialized agent runtime.
+ * @returns Resolves when the session exits.
  */
 export async function runConversation(
   agentInstance: AgentInstance
@@ -189,8 +209,12 @@ export async function runConversation(
 }
 
 /**
- * Handle slash commands
- * Returns true if conversation should continue, false to exit
+ * Handles slash commands entered during interactive conversation.
+ *
+ * @param input Raw slash command input.
+ * @param state Mutable conversation state.
+ * @param agentInstance Current agent runtime metadata.
+ * @returns True to continue the session, false to exit.
  */
 async function handleSlashCommand(
   input: string,
@@ -252,6 +276,13 @@ async function handleSlashCommand(
   }
 }
 
+/**
+ * Runs a single non-interactive prompt and prints markdown-rendered output.
+ *
+ * @param agentInstance Initialized agent runtime.
+ * @param prompt User prompt text.
+ * @returns Resolves when output has been streamed and printed.
+ */
 export async function runTextMode(
   agentInstance: AgentInstance,
   prompt: string

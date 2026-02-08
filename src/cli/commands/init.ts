@@ -3,10 +3,21 @@ import path from 'path';
 import chalk from 'chalk';
 import { createInterface } from 'readline';
 
+/**
+ * Returns whether stdin/stdout are attached to an interactive terminal.
+ *
+ * @returns True when interactive prompts are supported.
+ */
 function isInteractiveTerminal(): boolean {
   return Boolean(process.stdin.isTTY && process.stdout.isTTY);
 }
 
+/**
+ * Prompts for a single line of input in interactive mode.
+ *
+ * @param question Prompt text shown to the user.
+ * @returns The entered answer without surrounding whitespace.
+ */
 function askQuestion(question: string): Promise<string> {
   if (!isInteractiveTerminal()) {
     return Promise.reject(new Error('Interactive input requires a TTY terminal.'));
@@ -37,6 +48,11 @@ function askQuestion(question: string): Promise<string> {
   });
 }
 
+/**
+ * Creates or overwrites `agent.md` in the current working directory.
+ *
+ * @returns Resolves after writing the template or canceling overwrite.
+ */
 export async function initCommand(): Promise<void> {
   try {
     const agentMdPath = path.join(process.cwd(), 'agent.md');

@@ -9,13 +9,27 @@ import { createTools } from '../../tools/index.js';
 import { createModel } from '../../providers/index.js';
 import { firstRunWizard } from '../prompts.js';
 
-export async function runCommand(text?: string): Promise<void> {
-  const agentMdPath = path.join(process.cwd(), 'agent.md');
+/**
+ * Starts the agent from the current directory's `agent.md` configuration.
+ *
+ * @param text Optional one-shot prompt to run without entering chat mode.
+ * @param options Optional configuration options.
+ * @param options.pwd Working directory to run the agent from.
+ * @returns Resolves when execution completes or exits on error.
+ */
+export async function runCommand(text?: string, options?: { pwd?: string }): Promise<void> {
+  const workingDir = options?.pwd || process.cwd();
+  
+  if (options?.pwd) {
+    process.chdir(workingDir);
+  }
+  
+  const agentMdPath = path.join(workingDir, 'agent.md');
   
   try {
     await fs.access(agentMdPath);
   } catch {
-    console.log(chalk.yellow('No agent.md file found in the current directory.'));
+    console.log(chalk.yellow(`No agent.md file found in ${workingDir}.`));
     console.log(chalk.gray('Run `pal init` to create one.'));
     process.exit(1);
   }
@@ -57,6 +71,12 @@ export async function runCommand(text?: string): Promise<void> {
   }
 }
 
+/**
+ * Normalizes provider/model fields from parsed agent configuration.
+ *
+ * @param agentConfig Parsed agent configuration object.
+ * @returns A copy of the config with normalized provider and model values.
+ */
 export function normalizeAgentModelConfig(agentConfig: AgentConfig): AgentConfig {
   const provider = agentConfig.provider.trim().toLowerCase();
   const originalModel = agentConfig.model.trim();
@@ -87,6 +107,13 @@ export function normalizeAgentModelConfig(agentConfig: AgentConfig): AgentConfig
   };
 }
 
+/**
+ * Selects enabled tools from all available tools using agent configuration.
+ *
+ * @param agentConfig Agent configuration with tool directives.
+ * @param allTools Full map of discovered tools.
+ * @returns A map containing only enabled tools.
+ */
 export function selectEnabledTools(
   agentConfig: AgentConfig,
   allTools: Awaited<ReturnType<typeof createTools>>

@@ -6,30 +6,46 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 import type { Tool as AiTool } from 'ai';
+import {
+  scheduleCron as createScheduleCronTool,
+  listCrons as createListCronsTool,
+  removeCron as createRemoveCronTool,
+  toggleCron as createToggleCronTool,
+} from './cron.js';
+import type { CronJobResult } from './cron.js';
 
+/** A single grep match with file location and line content. */
 export interface GrepMatch {
   file: string;
   line: number;
   content: string;
 }
 
+/** A normalized result item returned by web search tools. */
 export interface WebSearchResult {
   title: string;
   url: string;
   snippet: string;
 }
 
+/** Map of tool names to their concrete AI tool contracts. */
 export type ToolMap = {
   bash: AiTool<{ command: string }, { stdout: string; stderr: string; exitCode: number }>;
   readFile: AiTool<{ path: string }, { content: string }>;
   writeFile: AiTool<{ path: string; content: string }, { success: boolean }>;
   grep: AiTool<{ pattern: string; path?: string; include?: string }, { matches: GrepMatch[]; error?: string }>;
   webSearch: AiTool<{ query: string; numResults?: number }, { results: WebSearchResult[]; error?: string }>;
+  scheduleCron: AiTool<{ name: string; schedule: string; prompt?: string }, CronJobResult>;
+  listCrons: AiTool<{ all: boolean }, CronJobResult>;
+  removeCron: AiTool<{ id: string }, CronJobResult>;
+  toggleCron: AiTool<{ id: string; enabled: boolean }, CronJobResult>;
 };
 
+/** Union of all available tool names. */
 export type ToolName = keyof ToolMap;
 
-export const TOOL_NAMES: ToolName[] = ['bash', 'readFile', 'writeFile', 'grep', 'webSearch'];
+/** Ordered list of tool names exposed by `createTools`. */
+export const TOOL_NAMES: ToolName[] = ['bash', 'readFile', 'writeFile', 'grep', 'webSearch', 'scheduleCron', 'listCrons', 'removeCron', 'toggleCron'];
 
 const grepSchema = z.object({
   pattern: z.string().describe('The regex pattern to search for'),
@@ -170,6 +186,11 @@ function createWebSearchTool(): AiTool<z.infer<typeof webSearchSchema>, { result
   });
 }
 
+/**
+ * Creates the full toolset used by the agent runtime.
+ *
+ * @returns Tool map containing bash, file, grep, and web search tools.
+ */
 export async function createTools(): Promise<ToolMap> {
   const bashToolkit: BashToolkit = await createBashTool();
 
@@ -179,6 +200,10 @@ export async function createTools(): Promise<ToolMap> {
     writeFile: bashToolkit.tools.writeFile,
     grep: createGrepTool(),
     webSearch: createWebSearchTool(),
+    scheduleCron: createScheduleCronTool,
+    listCrons: createListCronsTool,
+    removeCron: createRemoveCronTool,
+    toggleCron: createToggleCronTool,
   };
 }
 

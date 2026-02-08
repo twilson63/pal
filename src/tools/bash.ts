@@ -2,6 +2,7 @@ import { createBashTool } from 'bash-tool';
 import type { BashToolkit, CreateBashToolOptions } from 'bash-tool';
 import type { Tool as AiTool } from 'ai';
 
+/** Configuration used when constructing bash/file tools. */
 export interface BashToolConfig {
   destination?: string;
   files?: Record<string, string>;
@@ -14,6 +15,7 @@ export interface BashToolConfig {
   onAfterBashCall?: (input: { command: string; result: { stdout: string; stderr: string; exitCode: number } }) => { result: { stdout: string; stderr: string; exitCode: number } } | undefined;
 }
 
+/** Bash toolkit tools and sandbox handle exposed to callers. */
 export interface BashTools {
   bash: AiTool<{ command: string }, { stdout: string; stderr: string; exitCode: number }>;
   readFile: AiTool<{ path: string }, { content: string }>;
@@ -21,6 +23,12 @@ export interface BashTools {
   sandbox: BashToolkit['sandbox'];
 }
 
+/**
+ * Creates bash and file tools backed by `bash-tool`.
+ *
+ * @param config Optional setup values forwarded to `createBashTool`.
+ * @returns Tool instances plus the underlying sandbox.
+ */
 export async function createBashTools(config?: BashToolConfig): Promise<BashTools> {
   const options: CreateBashToolOptions = {
     destination: config?.destination,

@@ -1,7 +1,14 @@
 import chalk from 'chalk';
-import { loadConfig, saveConfig, getConfigDir, config } from '../../core/config.js';
-import type { PalConfig } from '../../core/types.js';
+import { loadConfig, saveConfig, getConfigDir } from '../../core/config.js';
 
+/**
+ * Handles global configuration subcommands.
+ *
+ * @param action Requested config action (`show`, `get`, or `set`).
+ * @param key Configuration key used by `get` and `set`.
+ * @param value Configuration value used by `set`.
+ * @returns Resolves when the requested action is complete.
+ */
 export async function configCommand(
   action?: string,
   key?: string,

@@ -4,10 +4,20 @@ import { saveConfig, setApiKey, config } from '../core/config.js';
 import { SUPPORTED_PROVIDERS, type SupportedProvider } from '../providers/index.js';
 import { PROVIDER_REGISTRY } from '../providers/registry.js';
 
+/**
+ * Returns whether stdin/stdout are attached to an interactive terminal.
+ *
+ * @returns True when interactive prompts are supported.
+ */
 function isInteractiveTerminal(): boolean {
   return Boolean(process.stdin.isTTY && process.stdout.isTTY);
 }
 
+/**
+ * Builds an error message for non-interactive setup environments.
+ *
+ * @returns Guidance for configuring pal without interactive prompts.
+ */
 function getNonInteractiveSetupMessage(): string {
   return [
     'Interactive setup requires a TTY terminal.',
@@ -15,6 +25,11 @@ function getNonInteractiveSetupMessage(): string {
   ].join(' ');
 }
 
+/**
+ * Runs the first-run interactive setup flow for provider and model defaults.
+ *
+ * @returns Resolves when configuration is completed or skipped.
+ */
 export async function firstRunWizard(): Promise<void> {
   if (!isInteractiveTerminal()) {
     throw new Error(getNonInteractiveSetupMessage());
@@ -25,6 +40,12 @@ export async function firstRunWizard(): Promise<void> {
     output: process.stdout,
   });
 
+  /**
+   * Prompts for a single line of input and trims the result.
+   *
+   * @param question Prompt text shown to the user.
+   * @returns The entered answer without leading or trailing whitespace.
+   */
   const askQuestion = (question: string): Promise<string> => new Promise((resolve, reject) => {
     const onClose = () => {
       reject(new Error(getNonInteractiveSetupMessage()));

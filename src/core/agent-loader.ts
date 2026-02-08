@@ -4,7 +4,10 @@ import { readFile } from "fs/promises";
 import { AgentConfig, AgentConfigSchema } from "./types.js";
 
 /**
- * Parse YAML frontmatter and markdown body from content
+ * Parses `agent.md` content into YAML frontmatter and markdown body.
+ *
+ * @param content Raw file contents.
+ * @returns Parsed frontmatter object and remaining markdown body.
  */
 export function parseAgentMd(content: string): {
   frontmatter: Record<string, unknown>;
@@ -30,7 +33,10 @@ export function parseAgentMd(content: string): {
 }
 
 /**
- * Load and parse agent configuration from agent.md file
+ * Loads, merges, and validates agent configuration from disk.
+ *
+ * @param path Absolute or relative path to `agent.md`.
+ * @returns Validated agent configuration.
  */
 export async function loadAgentConfig(path: string): Promise<AgentConfig> {
   try {
@@ -66,7 +72,10 @@ export async function loadAgentConfig(path: string): Promise<AgentConfig> {
 }
 
 /**
- * Validate agent configuration has required fields
+ * Validates raw config data against the agent configuration schema.
+ *
+ * @param config Untrusted configuration values to validate.
+ * @returns Strongly typed and validated agent configuration.
  */
 export function validateAgentConfig(
   config: Record<string, unknown>

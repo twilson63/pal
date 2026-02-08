@@ -1,6 +1,7 @@
 import type { LanguageModel } from "ai";
 import { getApiKey, getProviderConfig } from "../core/config.js";
 
+/** Provider identifiers supported by PAL. */
 export type SupportedProvider =
   | "anthropic"
   | "openai"
@@ -9,6 +10,7 @@ export type SupportedProvider =
   | "mistral"
   | "ollama";
 
+/** Metadata and factory hooks for a model provider. */
 export interface ProviderInfo {
   name: SupportedProvider;
   packageName: string;
@@ -114,7 +116,11 @@ const providerFactories: Record<
 };
 
 /**
- * Create a model instance for the given provider and model name
+ * Creates a language model instance for a provider/model pair.
+ *
+ * @param provider Provider name (case-insensitive).
+ * @param modelName Model identifier accepted by the provider SDK.
+ * @returns A configured `LanguageModel` instance.
  */
 export async function createModel(
   provider: string,
@@ -149,9 +155,7 @@ function isSupportedProvider(
   return SUPPORTED_PROVIDERS.includes(provider as SupportedProvider);
 }
 
-/**
- * List of all supported providers
- */
+/** List of provider names supported by this runtime. */
 export const SUPPORTED_PROVIDERS: SupportedProvider[] = [
   "anthropic",
   "openai",
@@ -162,7 +166,10 @@ export const SUPPORTED_PROVIDERS: SupportedProvider[] = [
 ];
 
 /**
- * Check if a provider is installed
+ * Checks whether a provider integration package is available.
+ *
+ * @param provider Provider to probe.
+ * @returns `true` when the provider appears installed, otherwise `false`.
  */
 export async function isProviderInstalled(
   provider: SupportedProvider

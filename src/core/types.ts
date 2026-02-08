@@ -157,3 +157,51 @@ export const DEFAULT_AGENT_CONFIG: AgentConfig = {
   systemPrompt:
     "You are a helpful AI assistant. You can help with coding tasks, file operations, and web searches. Always be concise and helpful.",
 };
+
+/**
+ * Zod schema for cron job
+ */
+export const CronJobSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  schedule: z.string(),
+  prompt: z.string(),
+  workingDir: z.string(),
+  enabled: z.boolean().default(true),
+  createdAt: z.string(),
+});
+
+/**
+ * Cron job interface
+ */
+export interface CronJob extends z.infer<typeof CronJobSchema> {
+  /** Unique identifier (opaque, immutable, e.g. c_<random>) */
+  id: string;
+  /** Display name for the job */
+  name: string;
+  /** Cron schedule expression */
+  schedule: string;
+  /** Prompt to execute when job runs */
+  prompt: string;
+  /** Working directory for job execution */
+  workingDir: string;
+  /** Whether the job is enabled */
+  enabled: boolean;
+  /** ISO timestamp when job was created */
+  createdAt: string;
+}
+
+/**
+ * Cron job with runtime status
+ */
+export interface CronJobWithStatus extends CronJob {
+  /** ISO timestamp of last execution */
+  lastRun?: string;
+}
+
+/**
+ * Zod schema for cron store
+ */
+export const CronStoreSchema = z.object({
+  jobs: z.array(CronJobSchema).default([]),
+});

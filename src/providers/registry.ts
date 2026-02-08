@@ -1,5 +1,6 @@
 import { SupportedProvider } from "./index.js";
 
+/** Descriptive metadata for a configured provider option. */
 export interface ProviderMetadata {
   name: SupportedProvider;
   displayName: string;
@@ -12,9 +13,7 @@ export interface ProviderMetadata {
   envVarName: string;
 }
 
-/**
- * Registry of all supported providers with metadata
- */
+/** Registry of all supported providers and their metadata. */
 export const PROVIDER_REGISTRY: Record<SupportedProvider, ProviderMetadata> = {
   anthropic: {
     name: "anthropic",
@@ -85,7 +84,10 @@ export const PROVIDER_REGISTRY: Record<SupportedProvider, ProviderMetadata> = {
 };
 
 /**
- * Get provider metadata by name
+ * Returns metadata for a specific provider.
+ *
+ * @param provider Provider identifier.
+ * @returns Metadata for the requested provider.
  */
 export function getProviderMetadata(
   provider: SupportedProvider
@@ -94,28 +96,39 @@ export function getProviderMetadata(
 }
 
 /**
- * Get default model for a provider
+ * Returns the default model name for a provider.
+ *
+ * @param provider Provider identifier.
+ * @returns Default model id.
  */
 export function getDefaultModel(provider: SupportedProvider): string {
   return PROVIDER_REGISTRY[provider].defaultModel;
 }
 
 /**
- * Get all supported provider names
+ * Lists all supported provider identifiers.
+ *
+ * @returns Provider names registered in `PROVIDER_REGISTRY`.
  */
 export function getSupportedProviders(): SupportedProvider[] {
   return Object.keys(PROVIDER_REGISTRY) as SupportedProvider[];
 }
 
 /**
- * Check if a provider name is valid
+ * Checks whether a string is a supported provider name.
+ *
+ * @param provider Provider name to validate.
+ * @returns `true` when the value exists in `PROVIDER_REGISTRY`.
  */
 export function isValidProvider(provider: string): provider is SupportedProvider {
   return provider in PROVIDER_REGISTRY;
 }
 
 /**
- * Get installation info for a provider
+ * Returns install details for a provider package.
+ *
+ * @param provider Provider identifier.
+ * @returns Package name, install command, and provider website.
  */
 export function getProviderInstallInfo(
   provider: SupportedProvider
@@ -129,8 +142,9 @@ export function getProviderInstallInfo(
 }
 
 /**
- * Get all installed providers
- * Note: This is a placeholder - actual installation check should be done in index.ts
+ * Returns providers considered installed by the registry layer.
+ *
+ * @returns Currently all supported providers.
  */
 export async function getInstalledProviders(): Promise<SupportedProvider[]> {
   // Return all providers for now - implement actual check later
@@ -138,8 +152,9 @@ export async function getInstalledProviders(): Promise<SupportedProvider[]> {
 }
 
 /**
- * Get all available providers (both installed and not installed)
- * Note: This is a placeholder - actual installation check should be done in index.ts
+ * Returns available providers with a placeholder installed flag.
+ *
+ * @returns Provider metadata entries marked as installed.
  */
 export async function getAvailableProviders(): Promise<
   Array<ProviderMetadata & { installed: boolean }>

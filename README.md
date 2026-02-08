@@ -1,28 +1,52 @@
 # pal
 
-Agent harness CLI using Vercel AI SDK
+CLI agent harness built with the Vercel AI SDK.
+
+`pal` runs from your project directory, loads an `agent.md` file, and gives you an interactive coding assistant with tool use.
+
+## Features
+
+- Provider-based model loading (`anthropic`, `openai`, `openrouter`, `google`, `mistral`, `ollama`)
+- Tool-enabled agent runtime (`bash`, `readFile`, `writeFile`, `grep`, `webSearch`)
+- Interactive chat mode and single-shot text mode
+- Session conversation context with slash commands:
+  - `/new` to reset context
+  - `/context` to inspect message counts
+  - `/model` to view model + current context size
 
 ## Installation
 
 ```bash
-bun install -g pal
+npm install
 ```
 
 ## Quick Start
 
-1. Run `pal` in your project directory
-2. If no `agent.md` exists, you'll be prompted to create one
-3. Configure your AI provider on first run
-4. Start chatting with your agent!
+1. Initialize your workspace config:
 
-## Configuration
+```bash
+pal init
+```
 
-Create an `agent.md` file in your project:
+2. Edit `agent.md` as needed.
+3. Run the assistant:
+
+```bash
+pal
+```
+
+4. Or run a one-shot prompt:
+
+```bash
+pal run "summarize this repository"
+```
+
+## agent.md Example
 
 ```markdown
 ---
-name: build
-description: Development agent
+name: assistant
+description: A helpful AI assistant
 model: anthropic/claude-sonnet-4.5
 provider: anthropic
 tools:
@@ -34,25 +58,36 @@ tools:
 systemPrompt: |
   You are a helpful coding assistant.
 ---
+
+## Context
+Project-specific instructions go here.
 ```
 
-## Commands
+## CLI Commands
 
-- `pal` - Run the agent
-- `pal init` - Create agent.md template
-- `pal config` - Show configuration
+- `pal` - Start interactive chat mode
+- `pal run [text]` - Run interactive mode or single-shot text mode
+- `pal init` - Create an `agent.md` template
+- `pal config` - Show global configuration
+- `pal config get <key>` - Read config value
 - `pal config set <key> <value>` - Set config value
-- `pal config get <key>` - Get config value
 
-## OpenRouter Notes
+## Chat Slash Commands
 
-If you use OpenRouter, free models may require enabling prompt publication/data policy settings in your OpenRouter account.
+- `/help` - List commands
+- `/model` - Show current provider/model and context size
+- `/context` - Show current conversation message counts
+- `/new` - Start a fresh session (clear context)
+- `/clear` - Clear terminal output
+- `/exit` or `/quit` - Exit chat
 
-Known-good models that avoid that requirement in typical setups:
+## Development
 
-- `moonshotai/kimi-k2.5`
-- `openai/gpt-4o-mini`
-- `anthropic/claude-3.5-haiku`
+```bash
+npm run typecheck
+bun test
+npm run build
+```
 
 ## License
 

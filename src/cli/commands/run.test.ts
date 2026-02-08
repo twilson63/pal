@@ -50,6 +50,10 @@ describe("selectEnabledTools", () => {
     writeFile: {} as ToolMap["writeFile"],
     grep: {} as ToolMap["grep"],
     webSearch: {} as ToolMap["webSearch"],
+    scheduleCron: {} as ToolMap["scheduleCron"],
+    listCrons: {} as ToolMap["listCrons"],
+    removeCron: {} as ToolMap["removeCron"],
+    toggleCron: {} as ToolMap["toggleCron"],
   };
 
   it("uses all available tools when none are explicitly configured", () => {
@@ -58,7 +62,11 @@ describe("selectEnabledTools", () => {
     expect(Object.keys(selected).sort()).toEqual([
       "bash",
       "grep",
+      "listCrons",
       "readFile",
+      "removeCron",
+      "scheduleCron",
+      "toggleCron",
       "webSearch",
       "writeFile",
     ]);
@@ -82,7 +90,7 @@ describe("selectEnabledTools", () => {
         allTools
       )
     ).toThrow(
-      "Agent configuration error: unknown tool(s): missingTool. Available tools: bash, readFile, writeFile, grep, webSearch"
+      "Agent configuration error: unknown tool(s): missingTool. Available tools: bash, readFile, writeFile, grep, webSearch, scheduleCron, listCrons, removeCron, toggleCron"
     );
   });
 });

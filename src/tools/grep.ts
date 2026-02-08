@@ -4,12 +4,14 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 
+/** A single grep match with file path, line number, and content. */
 export interface GrepMatch {
   file: string;
   line: number;
   content: string;
 }
 
+/** Response shape for grep tool execution. */
 export interface GrepResult {
   matches: GrepMatch[];
   error?: string;
@@ -21,6 +23,9 @@ const grepSchema = z.object({
   include: z.string().optional().describe('File glob pattern to filter files (e.g., "*.ts", "*.{js,ts}")'),
 });
 
+/**
+ * Grep-based search tool for finding regex matches across files.
+ */
 export const grepTool = tool({
   description: `Search for patterns in file contents using grep. 
 Returns matches with file path, line number, and content.
@@ -79,6 +84,11 @@ Use this to find code, text, or patterns across multiple files.`,
   },
 });
 
+/**
+ * Returns the shared grep tool instance.
+ *
+ * @returns `grepTool`.
+ */
 export function createGrepTool() {
   return grepTool;
 }
