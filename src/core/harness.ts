@@ -227,17 +227,22 @@ export async function runTextMode(
       prompt: prompt.trim(),
     });
 
+    let responseBuffer = '';
+
     for await (const part of stream.fullStream) {
       switch (part.type) {
         case 'text-delta':
-          process.stdout.write(part.text);
+          responseBuffer += part.text;
           break;
         case 'error':
           console.error(chalk.red('\n[Error] ') + String((part as any).error));
           break;
       }
     }
-    console.log();
+
+    // Render as markdown for clean text output
+    const rendered = marked.parse(responseBuffer) as string;
+    console.log(rendered);
   } catch (error) {
     console.error(chalk.red('Error: ') + (error instanceof Error ? error.message : String(error)));
     process.exit(1);
