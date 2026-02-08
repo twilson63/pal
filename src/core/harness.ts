@@ -3,7 +3,7 @@ import { createInterface } from "readline";
 import chalk from "chalk";
 import { marked } from "marked";
 import { markedTerminal } from "marked-terminal";
-import { AgentConfig } from "./types.js";
+import { AgentConfig, Message } from "./types.js";
 
 // Configure marked to use terminal renderer
 marked.use(markedTerminal() as any);
@@ -32,6 +32,7 @@ export interface AgentInstance {
 
 export interface ConversationState {
   isRunning: boolean;
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
 /**
@@ -68,6 +69,7 @@ export async function runConversation(
 ): Promise<void> {
   const state: ConversationState = {
     isRunning: true,
+    messages: [] as Array<{ role: 'user' | 'assistant'; content: string }>,
   };
 
   const rl = createInterface({
@@ -120,6 +122,12 @@ export async function runConversation(
         continue;
       }
 
+      // Add user message to conversation history
+      state.messages.push({
+        role: 'user',
+        content: trimmedInput,
+      });
+
       try {
         const spinner = createSpinner('Thinking...');
         let hasOutput = false;
@@ -128,7 +136,7 @@ export async function runConversation(
         let responseBuffer = '';
         
         const stream = await agentInstance.agent.stream({
-          prompt: trimmedInput,
+          messages: state.messages,
         });
 
         for await (const part of stream.fullStream) {
@@ -162,6 +170,12 @@ export async function runConversation(
           process.stdout.write(chalk.hex('#FFA500')(agentInstance.name + ': '));
           const rendered = marked.parse(responseBuffer) as string;
           console.log(rendered);
+
+          // Add assistant response to conversation history
+          state.messages.push({
+            role: 'assistant',
+            content: responseBuffer,
+          });
         }
       } catch (error) {
         console.error(chalk.red('\nError: ') + (error instanceof Error ? error.message : String(error)));
@@ -192,15 +206,34 @@ async function handleSlashCommand(
       return false;
 
     case "clear":
-      console.log(chalk.yellow("Conversation history cleared."));
+      console.clear();
+      return true;
+
+    case "new":
+      state.messages = [];
+      console.log(chalk.yellow("Started a new conversation. Context cleared."));
+      return true;
+
+    case "context":
+      console.log(chalk.yellow("\nConversation context:"));
+      console.log(`  Messages: ${state.messages.length}`);
+      if (state.messages.length > 0) {
+        const userMessages = state.messages.filter(m => m.role === 'user').length;
+        const assistantMessages = state.messages.filter(m => m.role === 'assistant').length;
+        console.log(`    User: ${userMessages}`);
+        console.log(`    Assistant: ${assistantMessages}`);
+      }
+      console.log();
       return true;
 
     case "help":
       console.log(chalk.yellow("\nAvailable commands:"));
       console.log("  /exit, /quit  - Exit the conversation");
-      console.log("  /clear        - Clear conversation history");
-      console.log("  /help         - Show this help message");
+      console.log("  /clear        - Clear the terminal screen");
+      console.log("  /new          - Start a new conversation (clear context)");
+      console.log("  /context      - Show conversation context size");
       console.log("  /model        - Show current model information");
+      console.log("  /help         - Show this help message");
       console.log();
       return true;
 
@@ -208,6 +241,7 @@ async function handleSlashCommand(
       console.log(chalk.yellow("\nCurrent model:"));
       console.log(`  Provider: ${agentInstance.provider}`);
       console.log(`  Model: ${agentInstance.model}`);
+      console.log(`  Context: ${state.messages.length} messages`);
       console.log();
       return true;
 
