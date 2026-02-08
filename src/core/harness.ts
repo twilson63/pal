@@ -22,6 +22,7 @@ export interface AgentInstance {
   agent: ToolLoopAgent;
   model: string;
   provider: string;
+  name: string;
 }
 
 export interface ConversationState {
@@ -50,6 +51,7 @@ export async function createAgent(
     agent,
     model: config.model,
     provider: config.provider,
+    name: config.name,
   };
 }
 
@@ -76,7 +78,7 @@ export async function runConversation(
 
       rl.once("close", onClose);
       try {
-        rl.question(chalk.cyan("You: "), (input) => {
+        rl.question(chalk.cyan(">> "), (input) => {
           rl.removeListener("close", onClose);
           resolve(input);
         });
@@ -87,7 +89,7 @@ export async function runConversation(
     });
   };
 
-  console.log(chalk.green("Agent: ") + "Hello! I'm ready to help. Type /help for available commands.");
+  console.log(chalk.hex('#FFA500')(agentInstance.name + ": ") + "Hello! I'm ready to help. Type /help for available commands.");
   console.log(chalk.gray("Using model: " + agentInstance.model));
   console.log();
 
@@ -128,23 +130,19 @@ export async function runConversation(
             case 'text-delta':
               if (!hasOutput) {
                 spinner.stop();
-                process.stdout.write(chalk.green('Agent: '));
+                process.stdout.write(chalk.hex('#FFA500')(agentInstance.name + ': '));
                 hasOutput = true;
               }
               process.stdout.write(part.text);
               break;
             case 'tool-call':
-              if (!isExecutingTool) {
-                isExecutingTool = true;
-                spinner.stop();
-              }
-              process.stdout.write(chalk.gray(`\n[Using tool: ${(part as any).toolName}]\n`));
+              // Tool call output suppressed
               break;
             case 'tool-result':
               isExecutingTool = false;
               if (!hasOutput) {
                 spinner.stop();
-                process.stdout.write(chalk.green('Agent: '));
+                process.stdout.write(chalk.hex('#FFA500')(agentInstance.name + ': '));
                 hasOutput = true;
               }
               break;
