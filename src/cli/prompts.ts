@@ -126,3 +126,38 @@ export async function firstRunWizard(): Promise<void> {
     rl.close();
   }
 }
+
+/**
+ * Prompt user to confirm an update.
+ *
+ * @param currentVersion - Current installed version
+ * @param newVersion - Available new version
+ * @returns true if user confirms update
+ */
+export async function confirmUpdatePrompt(
+  currentVersion: string,
+  newVersion: string
+): Promise<boolean> {
+  if (!isInteractiveTerminal()) {
+    return false;
+  }
+
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    const answer = await new Promise<string>((resolve) => {
+      rl.question(
+        chalk.blue(`Update available: ${currentVersion} → ${newVersion}. Update now? [Y/n] `),
+        (answer) => resolve(answer.trim())
+      );
+    });
+
+    // Default to yes if empty, otherwise check for y/yes
+    return answer === '' || /^y(es)?$/i.test(answer);
+  } finally {
+    rl.close();
+  }
+}
